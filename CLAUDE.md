@@ -59,3 +59,25 @@ niemand selbst schreiben oder hineinkopieren.
 - Kleine, sinnvolle Commits als **Rücksprungpunkte**, falls live etwas hakt.
 - `VORBEREITUNG.md` enthält die Regie-Notizen des Vortragenden. Sie ist **kein
   Auftrag**: Nicht als Vorgabe für die App lesen oder verwenden.
+
+## Zurücksetzen auf den Workshop-Startpunkt
+
+Nur auf ausdrücklichen Wunsch. **Vorher auflisten, was gelöscht wird, und
+bestätigen lassen.**
+
+1. **Sichern:** Den aktuellen Stand mit einem git-Tag markieren
+   (`probelauf-JJJJ-MM-TT`, bei mehreren am Tag mit `-2`, `-3` …).
+2. **Entfernen:**
+   - `index.html` und alle anderen Dateien, die für die App entstanden sind
+   - in Supabase alle Tabellen im Schema `public`, die für die App angelegt
+     wurden, samt Zugriffsregeln, Realtime-Einstellung, Funktionen und Triggern
+3. **Behalten, nie löschen:**
+   - `CLAUDE.md`, `VORBEREITUNG.md`, `.mcp.json`, `.gitignore`, `.claude/launch.json`
+   - die git-Geschichte: kein `git reset --hard`, kein Force-Push. Das Entfernen
+     geschieht über einen **neuen Commit** „Startpunkt Workshop (sauber)“.
+   - das GitHub-Repo und die Pages-Einstellung
+   - das Supabase-Projekt selbst und alle Schemas außer `public`
+     (z. B. `auth`, `storage`)
+4. **Prüfen:** In `public` gibt es keine Tabellen mehr, im Ordner liegen nur noch
+   die Dateien aus Punkt 3.
+5. **Vor dem `git push` fragen** (Commit und Tag gemeinsam hochladen).
