@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="version" content="0.4.0">
+<meta name="version" content="0.4.1">
 <title>Interessen-Umfrage</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   :root {
-    --bg: #fff6ee; --card: #ffffff; --text: #2b1a10; --muted: #7a5a45;
-    --accent: #e8590c; --accent-dark: #c2410c; --accent-light: #ffd8b5;
-    --soft: #f1dccb; --gold: #ff9f1c; --ok: #1f9d55;
+    --bg: #eef4fb; --card: #ffffff; --text: #0f1f33; --muted: #4a5f78;
+    --accent: #1d64d8; --accent-dark: #174ea6; --accent-light: #d3e3fb;
+    --soft: #d7e3f2; --gold: #7cc4ff; --ok: #1f9d55;
   }
   * { box-sizing: border-box; }
   body {
@@ -25,9 +25,9 @@
     font-size: .8rem; letter-spacing: .06em; text-transform: uppercase;
   }
   .hero {
-    background: linear-gradient(135deg, #ff9f1c 0%, #f76707 55%, #d9480f 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 55%, #1e3a8a 100%);
     color: #fff; border-radius: 22px; padding: 22px 20px 24px; margin-bottom: 18px;
-    box-shadow: 0 10px 28px rgba(232,89,12,.30);
+    box-shadow: 0 10px 28px rgba(29,78,216,.30);
   }
   .hero-title { font-size: 1.8rem; font-weight: 800; margin: 12px 0 4px; line-height: 1.15; }
   .hero-meta { font-size: 1.05rem; opacity: .95; }
@@ -46,7 +46,7 @@
   .budget.done .num { background: var(--ok); }
   .topic {
     background: var(--card); border-radius: 18px; padding: 16px 16px; margin-bottom: 12px;
-    box-shadow: 0 4px 18px rgba(120,60,20,.10); border-left: 6px solid var(--soft);
+    box-shadow: 0 4px 18px rgba(20,50,100,.10); border-left: 6px solid var(--soft);
     display: grid; grid-template-columns: 1fr auto; grid-template-areas: "head head" "text step";
     column-gap: 10px; row-gap: 6px; align-items: center;
     transition: border-color .2s;
@@ -66,7 +66,7 @@
   .stepper button:disabled { opacity: .3; cursor: not-allowed; }
   .stepper button:active:not(:disabled) { transform: scale(.92); }
   .stepper .val { width: 1.6em; text-align: center; font-size: 1.6rem; font-weight: 800; }
-  .card { background: var(--card); border-radius: 18px; padding: 18px 16px; box-shadow: 0 4px 18px rgba(120,60,20,.10); margin-top: 6px; }
+  .card { background: var(--card); border-radius: 18px; padding: 18px 16px; box-shadow: 0 4px 18px rgba(20,50,100,.10); margin-top: 6px; }
   .label { font-weight: 600; font-size: 1.1rem; margin: 0 0 10px; }
   textarea {
     width: 100%; min-height: 90px; padding: 12px; font: inherit; font-size: 1.05rem;
@@ -76,9 +76,9 @@
   .count { text-align: right; color: var(--muted); font-size: .85rem; margin-top: 4px; }
   .send {
     width: 100%; margin-top: 18px; padding: 18px; border: 0; border-radius: 14px;
-    background: linear-gradient(135deg, #f76707, #d9480f); color: #fff;
+    background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff;
     font-size: 1.25rem; font-weight: 700; cursor: pointer;
-    box-shadow: 0 6px 16px rgba(232,89,12,.35);
+    box-shadow: 0 6px 16px rgba(29,78,216,.35);
   }
   .send:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
   .error { color: #c62828; text-align: center; margin-top: 12px; min-height: 1.2em; }
@@ -89,12 +89,12 @@
   .link-btn { background: none; border: 0; color: var(--accent); font-size: 1rem; text-decoration: underline; cursor: pointer; margin-top: 16px; }
 
   /* ---------- Beamer-Ansicht ---------- */
-  body.beamer { background: radial-gradient(circle at 80% 0%, #3a1d0b 0%, #1c0f07 60%); color: #fff; min-height: 100vh; }
+  body.beamer { background: radial-gradient(circle at 80% 0%, #12325c 0%, #07142a 60%); color: #fff; min-height: 100vh; }
   .beamer-wrap { display: grid; grid-template-columns: 30vw 1fr; gap: 3vw; padding: 3vw; min-height: 100vh; }
-  .qr-box { background: #fff; color: #2b1a10; border-radius: 24px; padding: 2.5vw; text-align: center; align-self: start; border-top: 1vw solid var(--accent); }
+  .qr-box { background: #fff; color: #0f1f33; border-radius: 24px; padding: 2.5vw; text-align: center; align-self: start; border-top: 1vw solid var(--accent); }
   .qr-box h2 { margin: 0 0 1.5vw; font-size: 2.4vw; color: var(--accent-dark); }
   .qr-box svg { width: 100%; height: auto; display: block; }
-  .qr-box .url { margin-top: 1.2vw; font-size: 1.1vw; word-break: break-all; color: #7a5a45; }
+  .qr-box .url { margin-top: 1.2vw; font-size: 1.1vw; word-break: break-all; color: #4a5f78; }
   .results .badge { background: var(--accent); font-size: 1.2vw; padding: .5vw 1.2vw; }
   .results h1 { font-size: 3.2vw; margin: .8vw 0 .2vw; }
   .beamer-meta { font-size: 1.6vw; color: var(--accent-light); margin-bottom: 1.6vw; }
@@ -103,16 +103,16 @@
   .row { margin-bottom: 1.1vw; }
   .row-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 2vw; font-weight: 700; margin-bottom: .4vw; }
   .row-head .pct { color: var(--gold); font-size: 2.3vw; }
-  .row-head .lead { font-size: 1.2vw; background: var(--gold); color: #2b1a10; padding: .2vw .8vw; border-radius: 999px; margin-left: 1vw; vertical-align: middle; }
-  .bar { background: #3d2516; border-radius: 10px; height: 2.2vw; overflow: hidden; }
-  .bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff9f1c, #f76707); width: 0; transition: width .6s ease; }
-  .wishes h3 { font-size: 1.9vw; margin: 0 0 .8vw; color: #f1d3bd; }
+  .row-head .lead { font-size: 1.2vw; background: var(--gold); color: #07142a; padding: .2vw .8vw; border-radius: 999px; margin-left: 1vw; vertical-align: middle; }
+  .bar { background: #18304f; border-radius: 10px; height: 2.2vw; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: linear-gradient(90deg, #7cc4ff, #2563eb); width: 0; transition: width .6s ease; }
+  .wishes h3 { font-size: 1.9vw; margin: 0 0 .8vw; color: #d3e3fb; }
   .wishes ul { list-style: none; margin: 0; padding: 0; max-height: 22vh; overflow-y: auto; }
   .wishes li {
-    background: #2e1a0e; border-left: .5vw solid var(--accent); border-radius: 14px; padding: .8vw 1.3vw; margin-bottom: .7vw;
+    background: #10264a; border-left: .5vw solid var(--accent); border-radius: 14px; padding: .8vw 1.3vw; margin-bottom: .7vw;
     font-size: 1.6vw; line-height: 1.35; animation: pop .4s ease;
   }
-  .empty { color: #b08a70; font-size: 1.7vw; }
+  .empty { color: #7f97b8; font-size: 1.7vw; }
   @keyframes pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
   @media (max-width: 800px) {
     .beamer-wrap { grid-template-columns: 1fr; }
