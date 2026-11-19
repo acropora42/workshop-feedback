@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="app-version" content="0.1.0">
+<title>Workshop-Feedback</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --ink: #1d1d1f;
+    --muted: #6b6b70;
+    --accent: #1f5fbf;
+    --star: #f5b301;
+    --star-off: #d9d6cf;
+    --line: #e4e1da;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.4;
+  }
+  [hidden] { display: none !important; }
+
+  /* ---------- Handy-Ansicht ---------- */
+  .phone {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 28px 16px 40px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .phone h1 { font-size: 1.6rem; margin: 0; }
+  .phone p.lead { margin: 0; color: var(--muted); font-size: 1.1rem; }
+  .stars {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .stars button {
+    flex: 1;
+    aspect-ratio: 1;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: clamp(2.6rem, 15vw, 3.6rem);
+    line-height: 1;
+    color: var(--star-off);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .1s, color .1s;
+  }
+  .stars button.on { color: var(--star); }
+  .stars button:active { transform: scale(.9); }
+  .star-label { text-align: center; color: var(--muted); min-height: 1.4em; margin-top: -10px; }
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 14px;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    background: var(--card);
+    resize: vertical;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .counter { text-align: right; color: var(--muted); font-size: .9rem; margin-top: -16px; }
+  .btn {
+    width: 100%;
+    font: inherit;
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 18px;
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn.secondary { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+  .error { color: #b3261e; text-align: center; margin: 0; }
+  .thanks { text-align: center; margin-top: 18vh; display: flex; flex-direction: column; gap: 20px; }
+  .thanks .big { font-size: 4rem; }
+  .thanks h2 { margin: 0; font-size: 1.8rem; }
+
+  /* ---------- Beamer-Ansicht ---------- */
+  .beamer {
+    min-height: 100vh;
+    padding: 4vh 4vw;
+    display: grid;
+    grid-template-columns: 1fr 1fr minmax(260px, 22vw);
+    grid-template-rows: auto 1fr;
+    gap: 3vh 3vw;
+    background: #0f1420;
+    color: #ffffff;
+  }
+  .beamer header { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; }
+  .beamer h1 { margin: 0; font-size: clamp(2rem, 3.6vw, 3.6rem); }
+  .live { font-size: clamp(1rem, 1.4vw, 1.4rem); color: #8fd18f; }
+  .live::before { content: "●"; margin-right: .4em; animation: pulse 1.6s infinite; }
+  .live.off { color: #e0a14d; }
+  .live.off::before { animation: none; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .panel { background: #1a2131; border-radius: 20px; padding: 3vh 2vw; display: flex; flex-direction: column; gap: 2vh; min-width: 0; }
+  .panel h2 { margin: 0; font-size: clamp(1.2rem, 1.8vw, 1.8rem); color: #b8c2d6; font-weight: 500; }
+  .avg { font-size: clamp(5rem, 11vw, 11rem); font-weight: 700; line-height: 1; }
+  .avg-stars { font-size: clamp(2rem, 3.4vw, 3.4rem); color: var(--star); letter-spacing: .1em; }
+  .count { font-size: clamp(1.4rem, 2vw, 2rem); color: #b8c2d6; }
+  .bars { display: flex; flex-direction: column; gap: 1.4vh; margin-top: auto; }
+  .bar-row { display: grid; grid-template-columns: 3.2em 1fr 2.6em; align-items: center; gap: .8em; font-size: clamp(1.1rem, 1.6vw, 1.6rem); }
+  .bar-track { height: 1.1em; background: #2a3347; border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0; background: var(--star); border-radius: 99px; transition: width .6s ease; }
+  .bar-row .n { text-align: right; color: #b8c2d6; }
+  .comments { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.6vh; overflow: hidden; }
+  .comments li {
+    background: #232b3e;
+    border-radius: 14px;
+    padding: 1.6vh 1.2vw;
+    font-size: clamp(1.1rem, 1.6vw, 1.7rem);
+    overflow-wrap: anywhere;
+  }
+  .comments li .s { color: var(--star); margin-right: .5em; white-space: nowrap; }
+  .comments li.new { animation: pop .8s ease; }
+  @keyframes pop { from { background: #3d5a99; transform: translateY(-8px); } }
+  .empty { color: #7b869c; font-size: clamp(1.1rem, 1.6vw, 1.6rem); }
+  .qr { align-items: center; text-align: center; }
+  .qr .code { background: #fff; border-radius: 14px; padding: 12px; width: 100%; }
+  .qr .code svg { width: 100%; height: auto; display: block; }
+  .qr .hint { font-size: clamp(1.2rem, 1.7vw, 1.8rem); font-weight: 600; }
+  .qr .url { font-size: clamp(.8rem, .9vw, 1rem); color: #b8c2d6; overflow-wrap: anywhere; }
+
+  @media (max-width: 900px) {
+    .beamer { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Handy-Ansicht -->
+<main class="phone" id="phone" hidden>
+  <section id="form-view">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div>
+        <h1>Wie fanden Sie den Workshop?</h1>
+      </div>
+      <p class="lead">Tippen Sie auf die Sterne.</p>
+      <div class="stars" id="stars" role="radiogroup" aria-label="Bewertung"></div>
+      <div class="star-label" id="star-label"></div>
+      <textarea id="comment" maxlength="500" placeholder="Ihr Kommentar (freiwillig)"></textarea>
+      <div class="counter"><span id="chars">0</span>/500</div>
+      <button class="btn" id="send" disabled>Absenden</button>
+      <p class="error" id="error" hidden></p>
+    </div>
+  </section>
+  <section class="thanks" id="thanks-view" hidden>
+    <div class="big">🙏</div>
+    <h2>Danke für Ihr Feedback!</h2>
+    <p class="lead">Schauen Sie auf den Beamer.</p>
+    <button class="btn secondary" id="again">Noch ein Feedback geben</button>
+  </section>
+</main>
+
+<!-- Beamer-Ansicht -->
+<main class="beamer" id="beamer" hidden>
+  <header>
+    <h1>Workshop-Feedback</h1>
+    <span class="live off" id="live">verbinde …</span>
+  </header>
+  <section class="panel">
+    <h2>Durchschnitt</h2>
+    <div class="avg" id="avg">–</div>
+    <div class="avg-stars" id="avg-stars"></div>
+    <div class="count" id="count">noch keine Antworten</div>
+    <div class="bars" id="bars"></div>
+  </section>
+  <section class="panel">
+    <h2>Neueste Kommentare</h2>
+    <ul class="comments" id="comments"></ul>
+    <div class="empty" id="no-comments">Noch keine Kommentare.</div>
+  </section>
+  <section class="panel qr">
+    <div class="hint">Jetzt mitmachen!</div>
+    <div class="code" id="qr"></div>
+    <div class="url" id="qr-url"></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script>
+  // Öffentliche Verbindungsdaten. Der anon-Key ist dafür gedacht, im Browser zu stehen;
+  // die Zugriffsregeln (RLS) in der Datenbank erlauben damit nur Lesen und Einfügen.
+  const SUPABASE_URL = 'https://cpsjjfbtazjyxpkmeljl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwc2pqZmJ0YXpqeXhwa21lbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDUwNzcsImV4cCI6MjExMDY4MTA3N30.8nTSNW8Gc-TAvqYHuE9KoViIZmGDa5AeQObvu0ZEbL0';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const isBeamer = new URLSearchParams(location.search).has('beamer');
+  const $ = (id) => document.getElementById(id);
+
+  // ================= Handy =================
+  function startPhone() {
+    $('phone').hidden = false;
+    const labels = ['', 'Gar nicht gut', 'Eher nicht gut', 'Okay', 'Gut', 'Sehr gut'];
+    let rating = 0;
+    const starBox = $('stars');
+    for (let i = 1; i <= 5; i++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = '★';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', i + ' Sterne');
+      b.addEventListener('click', () => { rating = i; paint(); });
+      starBox.appendChild(b);
+    }
+    function paint() {
+      [...starBox.children].forEach((b, idx) => {
+        b.classList.toggle('on', idx < rating);
+        b.setAttribute('aria-checked', idx + 1 === rating);
+      });
+      $('star-label').textContent = labels[rating];
+      $('send').disabled = rating === 0;
+    }
+    $('comment').addEventListener('input', (e) => { $('chars').textContent = e.target.value.length; });
+
+    $('send').addEventListener('click', async () => {
+      const btn = $('send');
+      btn.disabled = true;
+      btn.textContent = 'Wird gesendet …';
+      $('error').hidden = true;
+      const text = $('comment').value.trim().slice(0, 500);
+      const { error } = await db.from('feedback').insert({ stars: rating, comment: text || null });
+      btn.textContent = 'Absenden';
+      if (error) {
+        $('error').textContent = 'Das hat nicht geklappt. Bitte nochmal versuchen.';
+        $('error').hidden = false;
+        btn.disabled = false;
+        return;
+      }
+      $('form-view').hidden = true;
+      $('thanks-view').hidden = false;
+    });
+
+    $('again').addEventListener('click', () => {
+      rating = 0;
+      $('comment').value = '';
+      $('chars').textContent = '0';
+      paint();
+      $('thanks-view').hidden = true;
+      $('form-view').hidden = false;
+    });
+  }
+
+  // ================= Beamer =================
+  function startBeamer() {
+    $('beamer').hidden = false;
+    document.body.style.background = '#0f1420';
+
+    // QR-Code zur Handy-Ansicht (gleiche Adresse, nur ohne ?beamer)
+    const phoneUrl = location.origin + location.pathname;
+    const qr = qrcode(0, 'M');
+    qr.addData(phoneUrl);
+    qr.make();
+    $('qr').innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+    $('qr-url').textContent = phoneUrl.replace(/^https?:\/\//, '');
+
+    let rows = [];
+    const seen = new Set();
+
+    function render(newId) {
+      const n = rows.length;
+      const counts = [0, 0, 0, 0, 0, 0];
+      let sum = 0;
+      rows.forEach(r => { counts[r.stars]++; sum += r.stars; });
+      const avg = n ? sum / n : 0;
+      $('avg').textContent = n ? avg.toFixed(1).replace('.', ',') : '–';
+      $('avg-stars').textContent = n ? '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg)) : '';
+      $('count').textContent = n === 0 ? 'noch keine Antworten' : n === 1 ? '1 Antwort' : n + ' Antworten';
+
+      const max = Math.max(1, ...counts.slice(1));
+      const bars = $('bars');
+      if (!bars.children.length) {
+        for (let s = 5; s >= 1; s--) {
+          const row = document.createElement('div');
+          row.className = 'bar-row';
+          row.innerHTML = '<span></span><div class="bar-track"><div class="bar-fill"></div></div><span class="n"></span>';
+          row.children[0].textContent = s + ' ★';
+          bars.appendChild(row);
+        }
+      }
+      requestAnimationFrame(() => {
+        [...bars.children].forEach((row, idx) => {
+          const s = 5 - idx;
+          row.children[2].textContent = counts[s];
+          row.querySelector('.bar-fill').style.width = (counts[s] / max * 100) + '%';
+        });
+      });
+
+      const withText = rows.filter(r => r.comment).slice(-6).reverse();
+      const list = $('comments');
+      list.innerHTML = '';
+      withText.forEach(r => {
+        const li = document.createElement('li');
+        if (r.id === newId) li.className = 'new';
+        const s = document.createElement('span');
+        s.className = 's';
+        s.textContent = '★'.repeat(r.stars);
+        li.appendChild(s);
+        li.appendChild(document.createTextNode(r.comment)); // als Text, nie als HTML
+        list.appendChild(li);
+      });
+      $('no-comments').hidden = withText.length > 0;
+    }
+
+    async function loadAll() {
+      const { data, error } = await db.from('feedback')
+        .select('id, created_at, stars, comment')
+        .order('created_at', { ascending: true })
+        .limit(2000);
+      if (error) return;
+      rows = data;
+      seen.clear();
+      rows.forEach(r => seen.add(r.id));
+      render();
+    }
+
+    function add(r) {
+      if (seen.has(r.id)) return;
+      seen.add(r.id);
+      rows.push(r);
+      render(r.id);
+    }
+
+    db.channel('feedback-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'feedback' }, (p) => add(p.new))
+      .subscribe((status) => {
+        const live = $('live');
+        if (status === 'SUBSCRIBED') {
+          live.textContent = 'live';
+          live.classList.remove('off');
+          loadAll(); // nach (Wieder-)Verbindung alles frisch laden
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          live.textContent = 'Verbindung unterbrochen';
+          live.classList.add('off');
+        }
+      });
+
+    loadAll();
+  }
+
+  isBeamer ? startBeamer() : startPhone();
+</script>
+</body>
+</html>
