@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="version" content="0.4.0">
+<title>Interessen-Umfrage</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #fff6ee; --card: #ffffff; --text: #2b1a10; --muted: #7a5a45;
+    --accent: #e8590c; --accent-dark: #c2410c; --accent-light: #ffd8b5;
+    --soft: #f1dccb; --gold: #ff9f1c; --ok: #1f9d55;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .hidden { display: none !important; }
+  .badge {
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.22); color: #fff; font-weight: 700;
+    font-size: .8rem; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .hero {
+    background: linear-gradient(135deg, #ff9f1c 0%, #f76707 55%, #d9480f 100%);
+    color: #fff; border-radius: 22px; padding: 22px 20px 24px; margin-bottom: 18px;
+    box-shadow: 0 10px 28px rgba(232,89,12,.30);
+  }
+  .hero-title { font-size: 1.8rem; font-weight: 800; margin: 12px 0 4px; line-height: 1.15; }
+  .hero-meta { font-size: 1.05rem; opacity: .95; }
+
+  /* ---------- Handy-Ansicht ---------- */
+  .phone { max-width: 480px; margin: 0 auto; padding: 24px 16px 40px; }
+  .intro { text-align: center; color: var(--muted); font-size: 1.05rem; margin: 0 0 14px; }
+  .budget {
+    position: sticky; top: 0; z-index: 5; text-align: center;
+    background: var(--bg); padding: 10px 0 12px; font-size: 1.15rem; font-weight: 700;
+  }
+  .budget .num {
+    display: inline-block; min-width: 2.2em; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent); color: #fff; margin: 0 4px;
+  }
+  .budget.done .num { background: var(--ok); }
+  .topic {
+    background: var(--card); border-radius: 18px; padding: 16px 16px; margin-bottom: 12px;
+    box-shadow: 0 4px 18px rgba(120,60,20,.10); border-left: 6px solid var(--soft);
+    display: grid; grid-template-columns: 1fr auto; grid-template-areas: "head head" "text step";
+    column-gap: 10px; row-gap: 6px; align-items: center;
+    transition: border-color .2s;
+  }
+  .topic.has { border-left-color: var(--accent); }
+  .topic h3 { grid-area: head; margin: 0; font-size: 1.25rem; }
+  .topic p { grid-area: text; }
+  .topic .stepper { grid-area: step; }
+  .topic p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.3; }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button {
+    width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+    font-size: 1.7rem; font-weight: 700; line-height: 1;
+    background: var(--accent-light); color: var(--accent-dark);
+  }
+  .stepper button.plus { background: var(--accent); color: #fff; }
+  .stepper button:disabled { opacity: .3; cursor: not-allowed; }
+  .stepper button:active:not(:disabled) { transform: scale(.92); }
+  .stepper .val { width: 1.6em; text-align: center; font-size: 1.6rem; font-weight: 800; }
+  .card { background: var(--card); border-radius: 18px; padding: 18px 16px; box-shadow: 0 4px 18px rgba(120,60,20,.10); margin-top: 6px; }
+  .label { font-weight: 600; font-size: 1.1rem; margin: 0 0 10px; }
+  textarea {
+    width: 100%; min-height: 90px; padding: 12px; font: inherit; font-size: 1.05rem;
+    border: 2px solid var(--soft); border-radius: 12px; resize: vertical;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .count { text-align: right; color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .send {
+    width: 100%; margin-top: 18px; padding: 18px; border: 0; border-radius: 14px;
+    background: linear-gradient(135deg, #f76707, #d9480f); color: #fff;
+    font-size: 1.25rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(232,89,12,.35);
+  }
+  .send:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+  .error { color: #c62828; text-align: center; margin-top: 12px; min-height: 1.2em; }
+  .thanks { text-align: center; padding: 40px 18px; }
+  .thanks .big { font-size: 4rem; }
+  .thanks h2 { margin: 10px 0; font-size: 1.6rem; }
+  .thanks p { color: var(--muted); font-size: 1.1rem; }
+  .link-btn { background: none; border: 0; color: var(--accent); font-size: 1rem; text-decoration: underline; cursor: pointer; margin-top: 16px; }
+
+  /* ---------- Beamer-Ansicht ---------- */
+  body.beamer { background: radial-gradient(circle at 80% 0%, #3a1d0b 0%, #1c0f07 60%); color: #fff; min-height: 100vh; }
+  .beamer-wrap { display: grid; grid-template-columns: 30vw 1fr; gap: 3vw; padding: 3vw; min-height: 100vh; }
+  .qr-box { background: #fff; color: #2b1a10; border-radius: 24px; padding: 2.5vw; text-align: center; align-self: start; border-top: 1vw solid var(--accent); }
+  .qr-box h2 { margin: 0 0 1.5vw; font-size: 2.4vw; color: var(--accent-dark); }
+  .qr-box svg { width: 100%; height: auto; display: block; }
+  .qr-box .url { margin-top: 1.2vw; font-size: 1.1vw; word-break: break-all; color: #7a5a45; }
+  .results .badge { background: var(--accent); font-size: 1.2vw; padding: .5vw 1.2vw; }
+  .results h1 { font-size: 3.2vw; margin: .8vw 0 .2vw; }
+  .beamer-meta { font-size: 1.6vw; color: var(--accent-light); margin-bottom: 1.6vw; }
+  .beamer-meta b { color: #fff; }
+  .rows { margin-bottom: 1.6vw; }
+  .row { margin-bottom: 1.1vw; }
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 2vw; font-weight: 700; margin-bottom: .4vw; }
+  .row-head .pct { color: var(--gold); font-size: 2.3vw; }
+  .row-head .lead { font-size: 1.2vw; background: var(--gold); color: #2b1a10; padding: .2vw .8vw; border-radius: 999px; margin-left: 1vw; vertical-align: middle; }
+  .bar { background: #3d2516; border-radius: 10px; height: 2.2vw; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff9f1c, #f76707); width: 0; transition: width .6s ease; }
+  .wishes h3 { font-size: 1.9vw; margin: 0 0 .8vw; color: #f1d3bd; }
+  .wishes ul { list-style: none; margin: 0; padding: 0; max-height: 22vh; overflow-y: auto; }
+  .wishes li {
+    background: #2e1a0e; border-left: .5vw solid var(--accent); border-radius: 14px; padding: .8vw 1.3vw; margin-bottom: .7vw;
+    font-size: 1.6vw; line-height: 1.35; animation: pop .4s ease;
+  }
+  .empty { color: #b08a70; font-size: 1.7vw; }
+  @keyframes pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 800px) {
+    .beamer-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Handy-Ansicht -->
+<main id="phone" class="phone hidden">
+  <header class="hero">
+    <div class="badge">VHS · Volkshochschule</div>
+    <div class="hero-title">Was interessiert Sie an KI?</div>
+    <div class="hero-meta">mit Laszlo Kovacs · 19. November 2026</div>
+  </header>
+  <p class="intro">Verteilen Sie <b>10 Punkte</b> auf die Themen.<br>Mehr Punkte = mehr Interesse. Anonym.</p>
+
+  <section id="form">
+    <div class="budget" id="budget">Noch <span class="num" id="left">10</span> Punkte zu verteilen</div>
+    <div id="topics"></div>
+
+    <div class="card">
+      <p class="label">Was möchten Sie unbedingt erfahren? <span style="font-weight:400;color:var(--muted)">(freiwillig)</span></p>
+      <textarea id="wish" maxlength="200" placeholder="z. B. Wie setze ich KI im Kursbüro ein?"></textarea>
+      <div class="count"><span id="chars">0</span> / 200</div>
+    </div>
+
+    <button class="send" id="send" disabled>Absenden</button>
+    <div class="error" id="error"></div>
+  </section>
+
+  <section id="thanks" class="card thanks hidden">
+    <div class="big">🙌</div>
+    <h2>Danke!</h2>
+    <p>Das Ergebnis sehen Sie gleich auf dem Beamer.</p>
+    <button class="link-btn" id="again">Noch einmal abstimmen</button>
+  </section>
+</main>
+
+<!-- Beamer-Ansicht -->
+<main id="beamer" class="beamer-wrap hidden">
+  <div class="qr-box">
+    <h2>Jetzt mitmachen!</h2>
+    <div id="qr"></div>
+    <div class="url" id="url"></div>
+  </div>
+  <div class="results">
+    <div class="badge">VHS · Volkshochschule</div>
+    <h1>Was interessiert uns an KI?</h1>
+    <div class="beamer-meta">Anteil aller vergebenen Punkte · <b id="total">noch keine Stimmen</b></div>
+    <div class="rows" id="rows"></div>
+    <div class="wishes">
+      <h3>Das möchten wir unbedingt erfahren</h3>
+      <ul id="list"></ul>
+      <div class="empty" id="noWishes">Noch keine Wünsche.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Verbindung zur Datenbank (öffentlicher Schlüssel, abgesichert durch Zugriffsregeln)
+  const SUPABASE_URL = "https://cpsjjfbtazjyxpkmeljl.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwc2pqZmJ0YXpqeXhwa21lbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDUwNzcsImV4cCI6MjExMDY4MTA3N30.8nTSNW8Gc-TAvqYHuE9KoViIZmGDa5AeQObvu0ZEbL0";
+  const PUBLIC_URL = "https://acropora42.github.io/workshop-feedback/";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const BUDGET = 10;
+  const TOPICS = [
+    { key: "architektur", icon: "🧠", title: "KI-Architektur", text: "Wie funktioniert KI im Inneren?" },
+    { key: "anwendungen", icon: "🧰", title: "Anwendungen",    text: "Welches Werkzeug für welche Aufgabe?" },
+    { key: "trends",      icon: "🚀", title: "Neue Trends",    text: "Was kommt in den nächsten 1–2 Jahren?" },
+    { key: "praxis",      icon: "🤝", title: "Praxiserfahrung", text: "Wie arbeiten andere damit im Alltag? Was klappt, was nicht?" },
+  ];
+
+  const isBeamer = new URLSearchParams(location.search).has("beamer");
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- Handy ----------
+  function initPhone() {
+    $("phone").classList.remove("hidden");
+    const points = Object.fromEntries(TOPICS.map((t) => [t.key, 0]));
+    const used = () => Object.values(points).reduce((a, b) => a + b, 0);
+
+    const box = $("topics");
+    TOPICS.forEach((t) => {
+      const el = document.createElement("div");
+      el.className = "topic";
+      el.innerHTML = `
+        <h3>${t.icon} ${t.title}</h3><p>${t.text}</p>
+        <div class="stepper">
+          <button type="button" class="minus" aria-label="Weniger Punkte für ${t.title}">−</button>
+          <div class="val">0</div>
+          <button type="button" class="plus" aria-label="Mehr Punkte für ${t.title}">+</button>
+        </div>`;
+      el.querySelector(".minus").addEventListener("click", () => { if (points[t.key] > 0) { points[t.key]--; update(); } });
+      el.querySelector(".plus").addEventListener("click", () => { if (used() < BUDGET) { points[t.key]++; update(); } });
+      t.el = el;
+      box.appendChild(el);
+    });
+
+    function update() {
+      const left = BUDGET - used();
+      TOPICS.forEach((t) => {
+        t.el.querySelector(".val").textContent = points[t.key];
+        t.el.querySelector(".minus").disabled = points[t.key] === 0;
+        t.el.querySelector(".plus").disabled = left === 0;
+        t.el.classList.toggle("has", points[t.key] > 0);
+      });
+      $("left").textContent = left;
+      $("budget").classList.toggle("done", left === 0);
+      $("budget").firstChild.textContent = left === 0 ? "Alle " : "Noch ";
+      $("budget").lastChild.textContent = left === 0 ? " Punkte verteilt ✓" : (left === 1 ? " Punkt zu verteilen" : " Punkte zu verteilen");
+      $("left").textContent = left === 0 ? BUDGET : left;
+      $("send").disabled = left !== 0;
+    }
+
+    $("wish").addEventListener("input", (e) => { $("chars").textContent = e.target.value.length; });
+
+    $("send").addEventListener("click", async () => {
+      $("send").disabled = true;
+      $("error").textContent = "";
+      const wunsch = $("wish").value.trim().slice(0, 200) || null;
+      const { error } = await db.from("interessen").insert({ ...points, wunsch });
+      if (error) {
+        $("error").textContent = "Das hat leider nicht geklappt. Bitte nochmal versuchen.";
+        $("send").disabled = false;
+        return;
+      }
+      $("form").classList.add("hidden");
+      $("thanks").classList.remove("hidden");
+      window.scrollTo(0, 0);
+    });
+
+    $("again").addEventListener("click", () => {
+      TOPICS.forEach((t) => { points[t.key] = 0; });
+      $("wish").value = ""; $("chars").textContent = "0";
+      update();
+      $("thanks").classList.add("hidden");
+      $("form").classList.remove("hidden");
+    });
+
+    update();
+  }
+
+  // ---------- Beamer ----------
+  function initBeamer() {
+    document.body.classList.add("beamer");
+    $("beamer").classList.remove("hidden");
+
+    // QR-Code zeigt immer auf die öffentliche Handy-Adresse
+    const target = location.hostname.endsWith("github.io") ? location.origin + location.pathname : PUBLIC_URL;
+    const qr = qrcode(0, "M");
+    qr.addData(target); qr.make();
+    $("qr").innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+    $("url").textContent = target.replace(/^https?:\/\//, "");
+
+    // Balken einmal anlegen, damit sie sich später sanft bewegen
+    TOPICS.forEach((t) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="row-head"><div>${t.icon} ${t.title}<span class="lead hidden">Favorit</span></div><div class="pct">0 %</div></div>
+        <div class="bar"><span></span></div>`;
+      t.row = row;
+      $("rows").appendChild(row);
+    });
+
+    load();
+    // Live-Aktualisierung: bei jeder neuen Stimme neu laden
+    db.channel("interessen-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "interessen" }, load)
+      .subscribe();
+  }
+
+  async function load() {
+    const { data, error } = await db.from("interessen")
+      .select("architektur, anwendungen, trends, praxis, wunsch, created_at")
+      .order("created_at", { ascending: false });
+    if (error) return;
+    render(data);
+  }
+
+  function render(rows) {
+    const n = rows.length;
+    $("total").textContent = n === 0 ? "noch keine Stimmen" : n === 1 ? "1 Stimme" : n + " Stimmen";
+
+    const sums = TOPICS.map((t) => rows.reduce((a, r) => a + r[t.key], 0));
+    const all = sums.reduce((a, b) => a + b, 0);
+    const max = Math.max(...sums);
+    TOPICS.forEach((t, i) => {
+      const pct = all ? Math.round((sums[i] / all) * 100) : 0;
+      t.row.querySelector(".pct").textContent = pct + " %";
+      t.row.querySelector(".bar span").style.width = pct + "%";
+      t.row.querySelector(".lead").classList.toggle("hidden", !(all && sums[i] === max));
+    });
+
+    const list = $("list"); list.innerHTML = "";
+    const withText = rows.filter((r) => r.wunsch);
+    withText.forEach((r) => {
+      const li = document.createElement("li");
+      li.textContent = r.wunsch; // als reiner Text, sicher
+      list.appendChild(li);
+    });
+    $("noWishes").classList.toggle("hidden", withText.length > 0);
+  }
+
+  isBeamer ? initBeamer() : initPhone();
+</script>
+</body>
+</html>
