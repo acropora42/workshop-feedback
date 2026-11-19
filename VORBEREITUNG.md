@@ -36,9 +36,14 @@ Notizen für den Vortragenden. Kein Auftrag an Claude.
 - [x] Entschieden: Demo in der **Claude-Desktop-App** (Bereich „Code“),
       VS Code bleibt als Ersatz
 - [x] CLAUDE.md als Hausordnung umgebaut, App-Idee wird live diktiert
-- [ ] Probelauf mit dem Sprechtext, mit 2–3 Handys testen
+- [x] Probelauf 1 (alte CLAUDE.md mit fertiger App-Idee): App lief auf dem Handy
+      gut. Gesichert als git-Tag `probelauf-2026-11-19`
+- [x] Probelauf 2 (v0.3.0 mit Kopfbereich und orangem Design). Gesichert als
+      git-Tag `probelauf-2026-11-19-2`, Tabelle im Supabase-Schema `archiv`
+- [x] Erkenntnis: Supabase blockiert Löschbefehle in Claude Code, deshalb wird
+      **archiviert statt gelöscht** (Ablauf steht in der CLAUDE.md)
+- [ ] Neuer Probelauf von null mit der aktuellen CLAUDE.md und dem Sprechtext
 - [ ] Notieren: Was wirkt gut, wo musste man warten, wie lange hat es gedauert
-- [ ] Zurücksetzen auf den Commit „Startpunkt Workshop“ und Tabelle(n) in
-      Supabase wieder löschen
+- [ ] Danach: „Setz das Projekt auf den Workshop-Startpunkt zurück.“
 - [ ] Vor dem Workshop: Hinweis-Banner in der App schließen, andere Sitzungen
       ausblenden
