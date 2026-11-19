@@ -69,15 +69,29 @@ bestätigen lassen.**
    (`probelauf-JJJJ-MM-TT`, bei mehreren am Tag mit `-2`, `-3` …).
 2. **Entfernen:**
    - `index.html` und alle anderen Dateien, die für die App entstanden sind
-   - in Supabase alle Tabellen im Schema `public`, die für die App angelegt
-     wurden, samt Zugriffsregeln, Realtime-Einstellung, Funktionen und Triggern
+     (über einen git-Commit, sie bleiben in der Geschichte erhalten)
+   - in Supabase: **nicht löschen, sondern archivieren.** Jede Tabelle im
+     Schema `public` mit `apply_migration` ins Schema `archiv` verschieben und
+     dabei das Datum anhängen:
+     ```sql
+     create schema if not exists archiv;
+     alter table public.feedback set schema archiv;
+     alter table archiv.feedback rename to feedback_JJJJ_MM_TT;
+     ```
+     Zugriffsregeln wandern mit. Besucher haben auf `archiv` keinen Zugriff.
+   - **Warum nicht löschen:** Die Supabase-Verbindung lehnt in Claude Code jeden
+     Löschbefehl (`drop`, `delete`, `truncate`) automatisch ab
+     (`"status":"declined"`), weil sie eine Bestätigung verlangt, die Claude Code
+     nicht anzeigen kann. Das ist keine Rechtefrage, ein weiterer Versuch ist
+     zwecklos. Verschieben und Umbenennen funktioniert.
+   - Das Archiv leert der Vortragende bei Bedarf selbst im Supabase-Dashboard.
 3. **Behalten, nie löschen:**
    - `CLAUDE.md`, `VORBEREITUNG.md`, `.mcp.json`, `.gitignore`, `.claude/launch.json`
    - die git-Geschichte: kein `git reset --hard`, kein Force-Push. Das Entfernen
      geschieht über einen **neuen Commit** „Startpunkt Workshop (sauber)“.
    - das GitHub-Repo und die Pages-Einstellung
    - das Supabase-Projekt selbst und alle Schemas außer `public`
-     (z. B. `auth`, `storage`)
-4. **Prüfen:** In `public` gibt es keine Tabellen mehr, im Ordner liegen nur noch
-   die Dateien aus Punkt 3.
+     (z. B. `auth`, `storage`, `archiv`)
+4. **Prüfen:** In `public` gibt es keine Tabellen mehr, die Tabellen liegen im
+   Schema `archiv`, und im Ordner liegen nur noch die Dateien aus Punkt 3.
 5. **Vor dem `git push` fragen** (Commit und Tag gemeinsam hochladen).
