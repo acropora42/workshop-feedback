@@ -3,15 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="version" content="0.2.0">
+<meta name="version" content="0.3.0">
 <title>Workshop-Feedback</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   :root {
-    --bg: #f4f6fb; --card: #ffffff; --text: #1a1f36; --muted: #5b6380;
-    --accent: #2e5bff; --star: #ffb400; --star-off: #d5d9e6; --ok: #1f9d55;
+    --bg: #fff6ee; --card: #ffffff; --text: #2b1a10; --muted: #7a5a45;
+    --accent: #e8590c; --accent-dark: #c2410c; --accent-light: #ffd8b5;
+    --star: #ff9f1c; --star-off: #f1dccb; --ok: #1f9d55;
   }
+  .badge {
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.22); color: #fff; font-weight: 700;
+    font-size: .8rem; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .hero {
+    background: linear-gradient(135deg, #ff9f1c 0%, #f76707 55%, #d9480f 100%);
+    color: #fff; border-radius: 22px; padding: 22px 20px 24px; margin-bottom: 22px;
+    box-shadow: 0 10px 28px rgba(232,89,12,.30);
+  }
+  .hero-title { font-size: 1.9rem; font-weight: 800; margin: 12px 0 4px; line-height: 1.15; }
+  .hero-meta { font-size: 1.05rem; opacity: .95; }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -23,7 +36,7 @@
   .phone { max-width: 480px; margin: 0 auto; padding: 24px 16px 40px; }
   .phone h1 { font-size: 1.7rem; margin: 8px 0 4px; text-align: center; }
   .phone .sub { color: var(--muted); text-align: center; margin: 0 0 24px; font-size: 1.05rem; }
-  .card { background: var(--card); border-radius: 18px; padding: 22px 18px; box-shadow: 0 4px 18px rgba(20,30,70,.08); }
+  .card { background: var(--card); border-radius: 18px; padding: 22px 18px; box-shadow: 0 4px 18px rgba(120,60,20,.10); border-top: 5px solid var(--accent); }
   .label { font-weight: 600; font-size: 1.1rem; margin: 0 0 12px; }
   .stars { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 6px; }
   .stars button {
@@ -42,7 +55,9 @@
   .count { text-align: right; color: var(--muted); font-size: .85rem; margin-top: 4px; }
   .send {
     width: 100%; margin-top: 18px; padding: 18px; border: 0; border-radius: 14px;
-    background: var(--accent); color: #fff; font-size: 1.25rem; font-weight: 700; cursor: pointer;
+    background: linear-gradient(135deg, #f76707, #d9480f); color: #fff;
+    font-size: 1.25rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(232,89,12,.35);
   }
   .send:disabled { opacity: .4; cursor: not-allowed; }
   .error { color: #c62828; text-align: center; margin-top: 12px; min-height: 1.2em; }
@@ -53,29 +68,31 @@
   .link-btn { background: none; border: 0; color: var(--accent); font-size: 1rem; text-decoration: underline; cursor: pointer; margin-top: 16px; }
 
   /* ---------- Beamer-Ansicht ---------- */
-  body.beamer { background: #0f1426; color: #fff; }
+  body.beamer { background: radial-gradient(circle at 80% 0%, #3a1d0b 0%, #1c0f07 60%); color: #fff; min-height: 100vh; }
   .beamer-wrap { display: grid; grid-template-columns: 34vw 1fr; gap: 3vw; padding: 3vw; min-height: 100vh; }
-  .qr-box { background: #fff; color: #0f1426; border-radius: 24px; padding: 2.5vw; text-align: center; align-self: start; }
-  .qr-box h2 { margin: 0 0 1.5vw; font-size: 2.4vw; }
+  .qr-box { background: #fff; color: #2b1a10; border-radius: 24px; padding: 2.5vw; text-align: center; align-self: start; border-top: 1vw solid var(--accent); }
+  .qr-box h2 { margin: 0 0 1.5vw; font-size: 2.4vw; color: var(--accent-dark); }
   .qr-box svg { width: 100%; height: auto; display: block; }
-  .qr-box .url { margin-top: 1.2vw; font-size: 1.15vw; word-break: break-all; color: #3b4466; }
-  .results h1 { font-size: 3.2vw; margin: 0 0 1.5vw; }
+  .qr-box .url { margin-top: 1.2vw; font-size: 1.15vw; word-break: break-all; color: #7a5a45; }
+  .results .badge { background: var(--accent); font-size: 1.2vw; padding: .5vw 1.2vw; }
+  .results h1 { font-size: 3.6vw; margin: 1vw 0 .3vw; }
+  .beamer-meta { font-size: 1.8vw; color: var(--accent-light); margin-bottom: 2vw; }
   .score { display: flex; align-items: baseline; gap: 2vw; margin-bottom: 1.5vw; }
   .score .avg { font-size: 9vw; font-weight: 800; line-height: 1; color: var(--star); }
-  .score .meta { font-size: 2vw; color: #c6cbe0; }
+  .score .meta { font-size: 2vw; color: #f1d3bd; }
   .score .meta .stars-line { font-size: 3vw; color: var(--star); letter-spacing: .2vw; }
   .dist { margin-bottom: 2vw; }
   .dist-row { display: grid; grid-template-columns: 5vw 1fr 4vw; align-items: center; gap: 1vw; font-size: 1.6vw; margin: .5vw 0; }
-  .bar { background: #252c47; border-radius: 8px; height: 2vw; overflow: hidden; }
-  .bar span { display: block; height: 100%; background: var(--star); width: 0; transition: width .5s; }
-  .comments h3 { font-size: 2vw; margin: 0 0 1vw; color: #c6cbe0; }
+  .bar { background: #3d2516; border-radius: 8px; height: 2vw; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff9f1c, #f76707); width: 0; transition: width .5s; }
+  .comments h3 { font-size: 2vw; margin: 0 0 1vw; color: #f1d3bd; }
   .comments ul { list-style: none; margin: 0; padding: 0; max-height: 40vh; overflow-y: auto; }
   .comments li {
-    background: #1c2340; border-radius: 14px; padding: 1vw 1.4vw; margin-bottom: .8vw;
+    background: #2e1a0e; border-left: .5vw solid var(--accent); border-radius: 14px; padding: 1vw 1.4vw; margin-bottom: .8vw;
     font-size: 1.7vw; line-height: 1.35; animation: pop .4s ease;
   }
   .comments li .s { color: var(--star); margin-right: .8vw; }
-  .empty { color: #8a91ad; font-size: 1.7vw; }
+  .empty { color: #b08a70; font-size: 1.7vw; }
   @keyframes pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
   @media (max-width: 800px) {
     .beamer-wrap { grid-template-columns: 1fr; }
@@ -86,6 +103,11 @@
 
 <!-- Handy-Ansicht -->
 <main id="phone" class="phone hidden">
+  <header class="hero">
+    <div class="badge">VHS · Volkshochschule</div>
+    <div class="hero-title">Workshop-Feedback</div>
+    <div class="hero-meta">mit Laszlo Kovacs · 19. November 2026</div>
+  </header>
   <h1>Wie war der Workshop?</h1>
   <p class="sub">Ihr Feedback ist anonym.</p>
 
@@ -124,7 +146,9 @@
     <div class="url" id="url"></div>
   </div>
   <div class="results">
+    <div class="badge">VHS · Volkshochschule</div>
     <h1>Feedback zum Workshop</h1>
+    <div class="beamer-meta">mit Laszlo Kovacs · 19. November 2026</div>
     <div class="score">
       <div class="avg" id="avg">–</div>
       <div class="meta">
