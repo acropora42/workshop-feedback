@@ -60,8 +60,12 @@ selbst schreiben oder hineinkopieren.
 - [x] Supabase-Konto und Projekt angelegt
 - [x] Supabase-MCP für diesen Ordner eingerichtet (Freigabe per `/mcp` → Authenticate)
 - [x] Verbindung testen: „Welche Tabellen gibt es?“ (erwartet: keine) — erfolgreich, keine Tabellen
-- [ ] GitHub-Repo anlegen und GitHub Pages einschalten
+- [x] GitHub-Repo anlegen und GitHub Pages einschalten
+      → Repo: https://github.com/acropora42/workshop-feedback (öffentlich)
+      → Seite: https://acropora42.github.io/workshop-feedback/ (aus `main`, Wurzel)
 - [ ] Probelauf: App komplett bauen, mit 2–3 Handys testen
 - [ ] Zurücksetzen auf den Stand vor der App (Tabelle wieder löschen) als
       Startpunkt für den Workshop
-- [ ] Entscheiden: Live-Demo in VS Code oder in der Claude-Desktop-App
+- [x] Entscheiden: Live-Demo in VS Code oder in der Claude-Desktop-App
+      → **Claude-Desktop-App (Bereich „Code“)**, VS Code bleibt als Ersatz.
+      Probelauf findet in der Desktop-App statt.
