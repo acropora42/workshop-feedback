@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="version" content="0.5.0">
+<meta name="version" content="0.5.1">
 <title>Ideen-Bewertung</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -110,6 +110,7 @@
   }
   .add input:focus { outline: none; border-color: var(--gold); }
   .add button { font: inherit; font-size: 1.4vw; font-weight: 700; padding: .8vw 1.6vw; border: 0; border-radius: 12px; background: var(--accent); color: #fff; cursor: pointer; }
+  .add button.confirm { background: var(--ok); }
   .add-msg { font-size: 1.1vw; color: #a9c2e2; margin-top: .6vw; min-height: 1.4vw; }
   @keyframes pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
   @media (max-width: 800px) {
@@ -344,13 +345,27 @@
     $("qr").innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
     $("url").textContent = target.replace(/^https?:\/\//, "");
 
+    // Zweistufig: erster Klick fragt auf der Seite nach, zweiter Klick fügt hinzu
+    // (kein Browser-Dialog, der wird in manchen Browsern unterdrückt)
+    const btn = $("addForm").querySelector("button");
+    let pending = false;
+    const resetAdd = () => { pending = false; btn.textContent = "Hinzufügen"; btn.classList.remove("confirm"); $("addMsg").textContent = ""; };
+    $("addInput").addEventListener("input", resetAdd);
     $("addForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const titel = $("addInput").value.trim().slice(0, 80);
       if (!titel) return;
-      if (!confirm(`Idee hinzufügen?\n\n„${titel}“\n\nSie lässt sich danach nicht mehr ändern.`)) return;
-      $("addMsg").textContent = "";
+      if (!pending) {
+        pending = true;
+        btn.textContent = "Ja, hinzufügen";
+        btn.classList.add("confirm");
+        $("addMsg").textContent = "Bitte noch einmal klicken. Die Idee lässt sich danach nicht mehr ändern.";
+        return;
+      }
+      btn.disabled = true;
       const { error } = await db.from("ideen").insert({ titel });
+      btn.disabled = false;
+      resetAdd();
       if (error) { $("addMsg").textContent = "Das hat nicht geklappt. Bitte nochmal versuchen."; return; }
       $("addInput").value = "";
       $("addInput").focus();
