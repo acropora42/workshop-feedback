@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="version" content="0.5.0">
+<title>Ideen-Bewertung</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #eef4fb; --card: #ffffff; --text: #0f1f33; --muted: #4a5f78;
+    --accent: #1d64d8; --accent-dark: #174ea6; --accent-light: #d3e3fb;
+    --soft: #d7e3f2; --gold: #7cc4ff; --ok: #1f9d55;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .hidden { display: none !important; }
+  .badge {
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.22); color: #fff; font-weight: 700;
+    font-size: .8rem; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .hero {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 55%, #1e3a8a 100%);
+    color: #fff; border-radius: 22px; padding: 22px 20px 24px; margin-bottom: 18px;
+    box-shadow: 0 10px 28px rgba(29,78,216,.30);
+  }
+  .hero-title { font-size: 1.8rem; font-weight: 800; margin: 12px 0 4px; line-height: 1.15; }
+  .hero-meta { font-size: 1.05rem; opacity: .95; }
+
+  /* ---------- Handy-Ansicht ---------- */
+  .phone { max-width: 480px; margin: 0 auto; padding: 24px 16px 40px; }
+  .intro { text-align: center; color: var(--muted); font-size: 1.05rem; margin: 0 0 14px; }
+  .budget {
+    position: sticky; top: 0; z-index: 5; text-align: center;
+    background: var(--bg); padding: 10px 0 12px; font-size: 1.15rem; font-weight: 700;
+  }
+  .budget .dots { display: inline-flex; gap: 8px; vertical-align: middle; margin-left: 6px; }
+  .budget .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); transition: background .2s; }
+  .budget .dot.used { background: var(--soft); }
+  .budget.done .dot.used { background: var(--ok); }
+  .idea {
+    background: var(--card); border-radius: 18px; padding: 14px 14px 14px 16px; margin-bottom: 12px;
+    box-shadow: 0 4px 18px rgba(20,50,100,.10); border-left: 6px solid var(--soft);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; transition: border-color .2s;
+  }
+  .idea .stepper { margin-left: auto; }
+  .idea.has { border-left-color: var(--accent); }
+  .idea h3 { flex: 1 1 100%; margin: 0; font-size: 1.2rem; line-height: 1.25; hyphens: auto; overflow-wrap: break-word; min-width: 0; }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button {
+    width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+    font-size: 1.7rem; font-weight: 700; line-height: 1;
+    background: var(--accent-light); color: var(--accent-dark);
+  }
+  .stepper button.plus { background: var(--accent); color: #fff; }
+  .stepper button:disabled { opacity: .3; cursor: not-allowed; }
+  .stepper button:active:not(:disabled) { transform: scale(.92); }
+  .stepper .val { width: 1.4em; text-align: center; font-size: 1.6rem; font-weight: 800; }
+  .card { background: var(--card); border-radius: 18px; padding: 18px 16px; box-shadow: 0 4px 18px rgba(20,50,100,.10); }
+  .waiting { text-align: center; padding: 36px 18px; color: var(--muted); font-size: 1.15rem; }
+  .waiting .big { font-size: 3rem; }
+  .send {
+    width: 100%; margin-top: 18px; padding: 18px; border: 0; border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff;
+    font-size: 1.25rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(29,78,216,.35);
+  }
+  .send:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+  .error { color: #c62828; text-align: center; margin-top: 12px; min-height: 1.2em; }
+  .thanks-head { text-align: center; margin-bottom: 14px; }
+  .thanks-head .big { font-size: 3rem; }
+  .thanks-head h2 { margin: 4px 0; font-size: 1.5rem; }
+  .thanks-head p { margin: 0; color: var(--muted); }
+  .m-row { margin-bottom: 14px; }
+  .m-head { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 1.05rem; margin-bottom: 5px; }
+  .m-head .pts { color: var(--accent-dark); white-space: nowrap; }
+  .m-bar { background: var(--accent-light); border-radius: 8px; height: 14px; overflow: hidden; }
+  .m-bar span { display: block; height: 100%; background: linear-gradient(90deg, #7cc4ff, #2563eb); width: 0; transition: width .6s ease; }
+  .link-btn { display: block; margin: 18px auto 0; background: none; border: 0; color: var(--accent); font-size: 1.05rem; text-decoration: underline; cursor: pointer; }
+
+  /* ---------- Beamer-Ansicht ---------- */
+  body.beamer { background: radial-gradient(circle at 80% 0%, #12325c 0%, #07142a 60%); color: #fff; min-height: 100vh; }
+  .beamer-wrap { display: grid; grid-template-columns: 30vw 1fr; gap: 3vw; padding: 3vw; min-height: 100vh; }
+  .qr-box { background: #fff; color: #0f1f33; border-radius: 24px; padding: 2.5vw; text-align: center; align-self: start; border-top: 1vw solid var(--accent); }
+  .qr-box h2 { margin: 0 0 1.5vw; font-size: 2.4vw; color: var(--accent-dark); }
+  .qr-box svg { width: 100%; height: auto; display: block; }
+  .qr-box .url { margin-top: 1.2vw; font-size: 1.1vw; word-break: break-all; color: #4a5f78; }
+  .results .badge { background: var(--accent); font-size: 1.2vw; padding: .5vw 1.2vw; }
+  .results h1 { font-size: 3.2vw; margin: .8vw 0 .2vw; }
+  .beamer-meta { font-size: 1.6vw; color: var(--accent-light); margin-bottom: 1.6vw; }
+  .beamer-meta b { color: #fff; }
+  .row { margin-bottom: 1.3vw; animation: pop .4s ease; }
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 2vw; font-size: 2.1vw; font-weight: 700; margin-bottom: .4vw; }
+  .row-head .pct { color: var(--gold); font-size: 2.3vw; white-space: nowrap; }
+  .row-head .pct small { color: #a9c2e2; font-size: 1.4vw; font-weight: 600; margin-right: .8vw; }
+  .row-head .lead { font-size: 1.2vw; background: var(--gold); color: #07142a; padding: .2vw .8vw; border-radius: 999px; margin-left: 1vw; vertical-align: middle; }
+  .bar { background: #18304f; border-radius: 10px; height: 2.4vw; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: linear-gradient(90deg, #7cc4ff, #2563eb); width: 0; transition: width .6s ease; }
+  .empty { color: #7f97b8; font-size: 1.8vw; }
+  .add { display: flex; gap: 1vw; margin-top: 2vw; opacity: .55; transition: opacity .2s; }
+  .add:hover, .add:focus-within { opacity: 1; }
+  .add input {
+    flex: 1; font: inherit; font-size: 1.5vw; padding: .8vw 1.2vw; border-radius: 12px;
+    border: 2px solid #2a4a75; background: #0c2142; color: #fff;
+  }
+  .add input:focus { outline: none; border-color: var(--gold); }
+  .add button { font: inherit; font-size: 1.4vw; font-weight: 700; padding: .8vw 1.6vw; border: 0; border-radius: 12px; background: var(--accent); color: #fff; cursor: pointer; }
+  .add-msg { font-size: 1.1vw; color: #a9c2e2; margin-top: .6vw; min-height: 1.4vw; }
+  @keyframes pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 800px) {
+    .beamer-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Handy-Ansicht -->
+<main id="phone" class="phone hidden">
+  <header class="hero">
+    <div class="badge">VHS · Volkshochschule</div>
+    <div class="hero-title">Welche Idee verfolgen wir?</div>
+    <div class="hero-meta">mit Laszlo Kovacs · 21. November 2026</div>
+  </header>
+
+  <section id="form">
+    <p class="intro">Verteilen Sie <b>3 Punkte</b> auf die Ideen.<br>Alle auf eine oder aufgeteilt. Anonym.</p>
+    <div class="budget" id="budget"><span id="budgetText">Noch 3 Punkte</span><span class="dots" id="dots"></span></div>
+    <div id="ideas"></div>
+    <div id="noIdeas" class="card waiting hidden"><div class="big">⏳</div>Gleich geht es los.<br>Die Ideen erscheinen hier von selbst.</div>
+    <button class="send" id="send" disabled>Absenden</button>
+    <div class="error" id="error"></div>
+  </section>
+
+  <section id="thanks" class="hidden">
+    <div class="card">
+      <div class="thanks-head">
+        <div class="big">🙌</div>
+        <h2>Danke!</h2>
+        <p>So sieht die Tendenz gerade aus:</p>
+      </div>
+      <div id="mResults"></div>
+    </div>
+    <button class="link-btn" id="again">Noch einmal abstimmen</button>
+  </section>
+</main>
+
+<!-- Beamer-Ansicht -->
+<main id="beamer" class="beamer-wrap hidden">
+  <div class="qr-box">
+    <h2>Jetzt mitmachen!</h2>
+    <div id="qr"></div>
+    <div class="url" id="url"></div>
+  </div>
+  <div class="results">
+    <div class="badge">VHS · Volkshochschule</div>
+    <h1>Welche Idee verfolgen wir?</h1>
+    <div class="beamer-meta">Anteil aller vergebenen Punkte · <b id="total">noch keine Punkte</b></div>
+    <div id="rows"></div>
+    <div class="empty" id="bEmpty">Noch keine Ideen. Unten eintippen und hinzufügen.</div>
+    <form class="add" id="addForm">
+      <input id="addInput" maxlength="80" placeholder="Neue Idee eintippen …" autocomplete="off">
+      <button type="submit">Hinzufügen</button>
+    </form>
+    <div class="add-msg" id="addMsg"></div>
+  </div>
+</main>
+
+<script>
+  // Verbindung zur Datenbank (öffentlicher Schlüssel, abgesichert durch Zugriffsregeln)
+  const SUPABASE_URL = "https://cpsjjfbtazjyxpkmeljl.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwc2pqZmJ0YXpqeXhwa21lbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDUwNzcsImV4cCI6MjExMDY4MTA3N30.8nTSNW8Gc-TAvqYHuE9KoViIZmGDa5AeQObvu0ZEbL0";
+  const PUBLIC_URL = "https://acropora42.github.io/workshop-feedback/";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const BUDGET = 3;
+  const MAX_IDEAS = 8;
+  const isBeamer = new URLSearchParams(location.search).has("beamer");
+  const $ = (id) => document.getElementById(id);
+
+  let ideas = [];   // [{id, titel}]
+  let votes = [];   // [{idee_id, punkte}]
+
+  // ---------- Daten laden + live bleiben ----------
+  async function load() {
+    const [i, s] = await Promise.all([
+      db.from("ideen").select("id, titel").order("id"),
+      db.from("stimmen").select("idee_id, punkte"),
+    ]);
+    if (i.error || s.error) return;
+    ideas = i.data; votes = s.data;
+    (isBeamer ? renderBeamer : renderPhone)();
+  }
+
+  function tally() {
+    const sums = Object.fromEntries(ideas.map((x) => [x.id, 0]));
+    votes.forEach((v) => { if (v.idee_id in sums) sums[v.idee_id] += v.punkte; });
+    const all = Object.values(sums).reduce((a, b) => a + b, 0);
+    const max = Math.max(0, ...Object.values(sums));
+    return { sums, all, max };
+  }
+
+  function live() {
+    let t;
+    const again = () => { clearTimeout(t); t = setTimeout(load, 150); };
+    db.channel("ideen-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "ideen" }, again)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "stimmen" }, again)
+      .subscribe();
+  }
+
+  // ---------- Handy ----------
+  const points = {};   // idee_id -> Punkte
+  const cards = {};    // idee_id -> Karte (bleibt beim Neuladen erhalten)
+  const used = () => Object.values(points).reduce((a, b) => a + b, 0);
+
+  function renderPhone() {
+    const box = $("ideas");
+    ideas.forEach((idea) => {
+      if (cards[idea.id]) { idea.el = cards[idea.id]; return; }
+      points[idea.id] = 0;
+      const el = document.createElement("div");
+      el.className = "idea";
+      el.innerHTML = `
+        <h3></h3>
+        <div class="stepper">
+          <button type="button" class="minus" aria-label="Weniger Punkte">−</button>
+          <div class="val">0</div>
+          <button type="button" class="plus" aria-label="Mehr Punkte">+</button>
+        </div>`;
+      el.querySelector("h3").textContent = idea.titel; // als reiner Text, sicher
+      el.querySelector(".minus").addEventListener("click", () => { if (points[idea.id] > 0) { points[idea.id]--; updatePhone(); } });
+      el.querySelector(".plus").addEventListener("click", () => { if (used() < BUDGET) { points[idea.id]++; updatePhone(); } });
+      idea.el = cards[idea.id] = el;
+      box.appendChild(el);
+    });
+    updatePhone();
+    renderMobileResults();
+  }
+
+  function updatePhone() {
+    const left = BUDGET - used();
+    ideas.forEach((idea) => {
+      const el = idea.el; if (!el) return;
+      el.querySelector(".val").textContent = points[idea.id];
+      el.querySelector(".minus").disabled = points[idea.id] === 0;
+      el.querySelector(".plus").disabled = left === 0;
+      el.classList.toggle("has", points[idea.id] > 0);
+    });
+    $("budgetText").textContent = left === 0 ? "Alle Punkte verteilt ✓" : left === 1 ? "Noch 1 Punkt" : `Noch ${left} Punkte`;
+    $("dots").innerHTML = Array.from({ length: BUDGET }, (_, k) => `<span class="dot${k >= left ? " used" : ""}"></span>`).join("");
+    $("budget").classList.toggle("done", left === 0);
+    $("noIdeas").classList.toggle("hidden", ideas.length > 0);
+    $("budget").classList.toggle("hidden", ideas.length === 0);
+    $("send").classList.toggle("hidden", ideas.length === 0);
+    $("send").disabled = left !== 0;
+  }
+
+  function renderMobileResults() {
+    const { sums, all, max } = tally();
+    const box = $("mResults"); box.innerHTML = "";
+    ideas.forEach((idea) => {
+      const pct = all ? Math.round((sums[idea.id] / all) * 100) : 0;
+      const row = document.createElement("div");
+      row.className = "m-row";
+      row.innerHTML = `<div class="m-head"><span class="t"></span><span class="pts">${pct} %</span></div><div class="m-bar"><span></span></div>`;
+      row.querySelector(".t").textContent = (all && sums[idea.id] === max ? "⭐ " : "") + idea.titel;
+      box.appendChild(row);
+      requestAnimationFrame(() => { row.querySelector(".m-bar span").style.width = pct + "%"; });
+    });
+  }
+
+  function initPhone() {
+    $("phone").classList.remove("hidden");
+
+    $("send").addEventListener("click", async () => {
+      $("send").disabled = true;
+      $("error").textContent = "";
+      const rows = Object.entries(points).filter(([, p]) => p > 0).map(([id, p]) => ({ idee_id: Number(id), punkte: p }));
+      const { error } = await db.from("stimmen").insert(rows);
+      if (error) {
+        $("error").textContent = "Das hat leider nicht geklappt. Bitte nochmal versuchen.";
+        $("send").disabled = false;
+        return;
+      }
+      await load();
+      $("form").classList.add("hidden");
+      $("thanks").classList.remove("hidden");
+      window.scrollTo(0, 0);
+    });
+
+    $("again").addEventListener("click", () => {
+      Object.keys(points).forEach((k) => { points[k] = 0; });
+      updatePhone();
+      $("thanks").classList.add("hidden");
+      $("form").classList.remove("hidden");
+      window.scrollTo(0, 0);
+    });
+
+    load();
+    live();
+  }
+
+  // ---------- Beamer ----------
+  function renderBeamer() {
+    const { sums, all, max } = tally();
+    $("total").textContent = all === 0 ? "noch keine Punkte" : all === 1 ? "1 Punkt vergeben" : all + " Punkte vergeben";
+    const box = $("rows");
+    ideas.forEach((idea) => {
+      let row = box.querySelector(`[data-id="${idea.id}"]`);
+      if (!row) {
+        row = document.createElement("div");
+        row.className = "row"; row.dataset.id = idea.id;
+        row.innerHTML = `
+          <div class="row-head"><div><span class="t"></span><span class="lead hidden">Favorit</span></div><div class="pct"></div></div>
+          <div class="bar"><span></span></div>`;
+        row.querySelector(".t").textContent = idea.titel; // als reiner Text, sicher
+        box.appendChild(row);
+      }
+      const pct = all ? Math.round((sums[idea.id] / all) * 100) : 0;
+      const p = sums[idea.id];
+      row.querySelector(".pct").innerHTML = `<small>${p} ${p === 1 ? "Punkt" : "Punkte"}</small>${pct} %`;
+      requestAnimationFrame(() => { row.querySelector(".bar span").style.width = pct + "%"; });
+      row.querySelector(".lead").classList.toggle("hidden", !(all && sums[idea.id] === max));
+    });
+    $("bEmpty").classList.toggle("hidden", ideas.length > 0);
+    const full = ideas.length >= MAX_IDEAS;
+    $("addForm").classList.toggle("hidden", full);
+    if (full) $("addMsg").textContent = `Alle ${MAX_IDEAS} Plätze für Ideen sind belegt.`;
+  }
+
+  function initBeamer() {
+    document.body.classList.add("beamer");
+    $("beamer").classList.remove("hidden");
+
+    // QR-Code zeigt immer auf die öffentliche Handy-Adresse
+    const target = location.hostname.endsWith("github.io") ? location.origin + location.pathname : PUBLIC_URL;
+    const qr = qrcode(0, "M");
+    qr.addData(target); qr.make();
+    $("qr").innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+    $("url").textContent = target.replace(/^https?:\/\//, "");
+
+    $("addForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const titel = $("addInput").value.trim().slice(0, 80);
+      if (!titel) return;
+      if (!confirm(`Idee hinzufügen?\n\n„${titel}“\n\nSie lässt sich danach nicht mehr ändern.`)) return;
+      $("addMsg").textContent = "";
+      const { error } = await db.from("ideen").insert({ titel });
+      if (error) { $("addMsg").textContent = "Das hat nicht geklappt. Bitte nochmal versuchen."; return; }
+      $("addInput").value = "";
+      $("addInput").focus();
+      load();
+    });
+
+    load();
+    live();
+  }
+
+  isBeamer ? initBeamer() : initPhone();
+</script>
+</body>
+</html>
